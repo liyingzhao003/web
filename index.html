@@ -1,0 +1,83 @@
+<head>
+	<meta charset="UTF-8">
+	<title>dome</title>
+	<script id="hydro_config" type="text/javascript">
+		window.Hydro_tagId = "c629d27c-2243-4a97-ade9-b1ef3e5b0924";
+	</script>
+	<!-- <script id="hydro_script" src="https://track.hydro.online/"></script> -->
+	<script>
+		let inactivityInterval, session_id = generateSessionId(),
+			lastStatus = 1,
+			focusTimeout;
+
+		function handleEvents() {
+			// window.addEventListener("focus", () => {
+			// 	clearTimeout(focusTimeout), focusTimeout = setTimeout(() => {
+			// 		handleVisibilityChange(1), connectTab()
+			// 	}, 100)
+			// }), window.addEventListener("blur", () => {
+			// 	handleVisibilityChange(0), disconnectTab(), session_id = generateSessionId()
+			// }), onPageLoad()
+			onPageLoad()
+		}
+
+		function handleVisibilityChange(n) {
+			n !== lastStatus && (lastStatus = n, sendStatusToAPI(n))
+		}
+
+		function onInactivityTimeout() {
+			document.hidden || 1 !== lastStatus || (connectTab(), sendStatusToAPI(1))
+		}
+
+		function onPageLoad() {
+			sendStatusToAPI(1), resetInactivityTimer()
+		}
+
+		function sendStatusToAPI(n) {
+			let e = window.Hydro_tagId,
+				t = new XMLHttpRequest;
+			t.open("POST", "https://api-analytics.hydro.online/hydro-ping", !0), t.setRequestHeader("Content-Type",
+				"application/json"), t.onreadystatechange = function() {
+				t.readyState === XMLHttpRequest.DONE && (200 === t.status ? console.log("API response:coming", t
+					.responseText) : (disconnectTab(), session_id = generateSessionId()))
+			}, t.send(JSON.stringify({
+				status: n,
+				tag_id: e,
+				session_id
+			}))
+		}
+
+		function resetInactivityTimer() {
+			clearInterval(inactivityInterval), inactivityInterval = setInterval(onInactivityTimeout, 15e3)
+		}
+
+		function generateSessionId() {
+			return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(n) {
+				var e = 16 * Math.random() | 0;
+				return ("x" == n ? e : 3 & e | 8)
+					.toString(16)
+			})
+		}
+		document.addEventListener("visibilitychange", function() {
+			document.hidden || "hidden" === document.visibilityState ? (sendStatusToAPI(0), disconnectTab(),
+				session_id = generateSessionId()) : (sendStatusToAPI(1), connectTab())
+		});
+		let broadcastChannel;
+
+		function connectTab() {
+			broadcastChannel || ((broadcastChannel = new BroadcastChannel("tabCommunicationChannel"))
+				.onmessage = onMessage)
+		}
+
+		function disconnectTab() {
+			broadcastChannel && (broadcastChannel.postMessage("disconnect"), broadcastChannel.close(), broadcastChannel =
+				null)
+		}
+
+		function onMessage(n) {
+			"disconnect" === n.data && disconnectTab()
+		}
+		handleEvents();
+	</script>
+</head>
+<p>老王帮我测试Hydro</p>
